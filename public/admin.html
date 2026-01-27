@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Handy C - Fernbedienung</title>
+</head>
+<body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
+    <h2>Regiepult</h2>
+    <button id="startBtn" style="padding: 20px 40px; font-size: 20px; background-color: #28a745; color: white; border: none; border-radius: 10px; cursor: pointer;">
+        VIDEO JETZT STARTEN
+    </button>
+
+    <script>
+        document.getElementById('startBtn').onclick = () => {
+            // Wir senden ein Start-Signal mit dem aktuellen Zeitstempel
+            localStorage.setItem('remote_start_video', Date.now());
+            console.log("Start-Signal gesendet!");
+        };
+    </script>
+</body>
+</html>
