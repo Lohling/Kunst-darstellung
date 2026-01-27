@@ -4,44 +4,75 @@
     <meta charset="UTF-8">
     <title>Handy A - Viewer</title>
     <style>
-        body { background: #000; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
+        body { 
+            background: #000; 
+            color: white; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+            overflow: hidden; 
+        }
         video, img { max-width: 100%; max-height: 100vh; }
+        img { object-fit: contain; } /* Bild skalieren */
     </style>
 </head>
 <body>
     <video id="videoPlayer" controls>
         <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
     </video>
-    
     <img id="photoDisplay" style="display: none;">
 
     <script>
-    const video = document.getElementById('videoPlayer');
-    const img = document.getElementById('photoDisplay');
+        const video = document.getElementById('videoPlayer');
+        const img = document.getElementById('photoDisplay');
 
-    // Sobald das Video startet...
-    video.onplay = () => {
-        console.log("Video gestartet. In 2 Sekunden wird ausgelöst...");
         
-        setTimeout(() => {
-            console.log("Sende Auslöse-Befehl an Kamera!");
-            localStorage.setItem('trigger_camera', Date.now()); // Zeitstempel als Signal
-        }, 5000); // 5000ms = 5 Sekunden
-    };
+        video.onplay = () => { // Sobald das Video startet...
+            console.log("Video gestartet. In 2 Sekunden wird ausgelöst...");
+            
+            // Vollbild für Video aktivieren
+            if (video.requestFullscreen) {
+                video.requestFullscreen();
+            }
+        
+            setTimeout(() => {
+                console.log("Sende Auslöse-Befehl an Kamera!");
+                localStorage.setItem('trigger_camera', Date.now()); // Zeitstempel als Signal
+            }, 2000); // 2000ms = 2 Sekunden
+        };
 
-    // Überprüfung auf das Foto (wie zuvor)
-    function checkForPhoto() {
-        const savedPhoto = localStorage.getItem('shared_photo');
-        if (savedPhoto) {
-            video.pause();
-            video.style.display = 'none';
-            img.src = savedPhoto;
-            img.style.display = 'block';
-            // Wichtig: Signal löschen, damit es beim nächsten Start neu geht
-            localStorage.removeItem('shared_photo');
+        // Nach Video-Ende prüfen
+        video.onended = () => {
+            checkForPhoto();
+        };
+
+        // Überprüfung auf das Foto
+        let retryCount = 0;
+        function checkForPhoto() {
+            const savedPhoto = localStorage.getItem('shared_photo');
+            if (savedPhoto) {
+                video.pause();
+                video.style.display = 'none';
+                img.src = savedPhoto;
+                img.style.display = 'block';
+                
+                // Vollbild für Bild aktivieren
+                if (img.requestFullscreen) {
+                    img.requestFullscreen();
+                }
+                
+                // Reset für nächsten Durchlauf
+                localStorage.removeItem('shared_photo');
+                retryCount = 0; 
+            } else if (retryCount < 1) {
+                retryCount++;
+                setTimeout(() => checkForPhoto(), 5000); // Nach 5 Sekunden erneut prüfen
+            } else {
+                console.log("Foto nach Retry nicht gefunden. Abbruch.");
+            }
         }
-    }
-    setInterval(checkForPhoto, 500);
     </script>
 </body>
 </html>
