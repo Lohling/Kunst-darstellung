@@ -13,76 +13,93 @@
             height: 100vh; 
             margin: 0; 
             overflow: hidden; 
+            font-family: sans-serif;
         }
-        video, img { max-width: 100%; max-height: 100vh; }
-        img { object-fit: contain; } 
+        video, img { max-width: 100%; max-height: 100vh; display: none; }
+        #waitingRoom { display: block; text-align: center; }
     </style>
 </head>
 <body>
+
+
     <video id="videoPlayer" controls>
         <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
     </video>
-    <img id="photoDisplay" style="display: none;">
+    
+    <img id="photoDisplay">
 
     <script>
         const video = document.getElementById('videoPlayer');
         const img = document.getElementById('photoDisplay');
         let photoReady = false; 
 
-        // 1. ÜBERWACHUNG DER FERNBEDIENUNG (Remote Start)
-        setInterval(() => {
+        // 1. ÜBERWACHUNG DER FERNBEDIENUNG
+        const remoteCheck = setInterval(() => {
             if (localStorage.getItem('remote_start_video')) {
                 console.log("Remote-Start Signal empfangen!");
-                localStorage.removeItem('remote_start_video'); // Signal löschen
-                video.play(); // Video starten
+                localStorage.removeItem('remote_start_video');
+                startExperience();
             }
         }, 100);
 
-        // 2. LOGIK WÄHREND DAS VIDEO LÄUFT
-        video.onplay = () => { 
-            console.log("Video gestartet...");
+        function startExperience() {
+            video.style.display = 'block';
+            video.play();
             
-            // Vollbild aktivieren
             if (video.requestFullscreen) {
-                video.requestFullscreen().catch(err => console.log("Vollbild blockiert:", err));
+                video.requestFullscreen().catch(e => console.log("Vollbild-Auto-Block"));
             }
-        
-            // Nach 2 Sekunden den Kamera-Trigger senden
+        }
+
+        // 2. LOGIK WÄHREND DES VIDEOS
+        video.onplay = () => {
             setTimeout(() => {
                 console.log("Sende Auslöse-Befehl an Kamera!");
                 localStorage.setItem('trigger_camera', Date.now()); 
             }, 2000); 
         };
 
-        // 3. HINTERGRUND-CHECK: IST DAS FOTO SCHON DA?
-        // Wir schauen ständig nach, ob das Bild im Speicher liegt
+        // 3. FOTO IM HINTERGRUND LADEN
         setInterval(() => {
             const savedPhoto = localStorage.getItem('shared_photo');
             if (savedPhoto && !photoReady) {
-                console.log("Foto empfangen und im Hintergrund geladen.");
-                img.src = savedPhoto; // Bildquelle setzen (lädt im Hintergrund)
+                img.src = savedPhoto;
                 photoReady = true;
-                localStorage.removeItem('shared_photo'); // Speicher direkt leeren
+                localStorage.removeItem('shared_photo');
             }
         }, 500);
 
-        // 4. VIDEO-ENDE: JETZT DAS BILD ZEIGEN
+        // 4. VIDEO-ENDE & AUTO-RESET
         video.onended = () => {
-            console.log("Video beendet.");
             if (photoReady) {
                 video.style.display = 'none';
                 img.style.display = 'block';
                 
-                // Optional: Auch das Bild im Vollbild zeigen
-                if (img.requestFullscreen) {
-                    img.requestFullscreen().catch(err => console.log(err));
-                }
-            } else {
-                console.log("Video zu Ende, aber Foto wurde noch nicht empfangen.");
-                // Hier könnte man eine Fehlermeldung oder einen Loader einbauen
+                // 10 Sekunden Timer für den Reset
+                console.log("Bild wird für 10s angezeigt...");
+                setTimeout(() => {
+                    resetSystem();
+                }, 10000); // 10.000ms = 10 Sekunden
             }
         };
 
+        function resetSystem() {
+            console.log("Resetting...");
+            // Alles zurück auf Anfang
+            img.style.display = 'none';
+            video.style.display = 'none';
+            
+            // Video zurückspulen
+            video.pause();
+            video.currentTime = 0;
+            photoReady = false;
+            img.src = "";
+
+            // Vollbild beenden (falls gewünscht)
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            }
+        }
     </script>
 </body>
 </html>
