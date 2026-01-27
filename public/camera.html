@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Handy B - Kamera</title>
+</head>
+<body style="font-family: sans-serif; text-align: center;">
+    <h2>Kamera-Steuerung</h2>
+    <video id="webcam" autoplay playsinline style="width: 300px; border: 2px solid #ccc;"></video>
+    <br><br>
+    <button id="captureBtn" style="padding: 15px 30px; font-size: 18px; cursor: pointer;">FOTO SCHIESSEN</button>
+    <canvas id="canvas" style="display:none;"></canvas>
+
+    <script>
+   const video = document.getElementById('webcam');
+const canvas = document.getElementById('canvas');
+
+navigator.mediaDevices.getUserMedia({ video: true })
+    .then(stream => { video.srcObject = stream; });
+
+function takeSnapshot() {
+    const context = canvas.getContext('2d');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0);
+    
+    const base64Image = canvas.toDataURL('image/jpeg', 0.8);
+    localStorage.setItem('shared_photo', base64Image);
+    localStorage.removeItem('trigger_camera');
+    console.log("Foto geschossen und übertragen!");
+}
+
+setInterval(() => {
+    if (localStorage.getItem('trigger_camera')) {
+        takeSnapshot();
+    }
+}, 100);
+    </script>
+</body>
+</html>

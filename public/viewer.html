@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Handy A - Viewer</title>
+    <style>
+        body { background: #000; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
+        video, img { max-width: 100%; max-height: 100vh; }
+    </style>
+</head>
+<body>
+    <video id="videoPlayer" controls>
+        <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
+    </video>
+    
+    <img id="photoDisplay" style="display: none;">
+
+    <script>
+    const video = document.getElementById('videoPlayer');
+    const img = document.getElementById('photoDisplay');
+
+    // Sobald das Video startet...
+    video.onplay = () => {
+        console.log("Video gestartet. In 2 Sekunden wird ausgelöst...");
+        
+        setTimeout(() => {
+            console.log("Sende Auslöse-Befehl an Kamera!");
+            localStorage.setItem('trigger_camera', Date.now()); // Zeitstempel als Signal
+        }, 5000); // 5000ms = 5 Sekunden
+    };
+
+    // Überprüfung auf das Foto (wie zuvor)
+    function checkForPhoto() {
+        const savedPhoto = localStorage.getItem('shared_photo');
+        if (savedPhoto) {
+            video.pause();
+            video.style.display = 'none';
+            img.src = savedPhoto;
+            img.style.display = 'block';
+            // Wichtig: Signal löschen, damit es beim nächsten Start neu geht
+            localStorage.removeItem('shared_photo');
+        }
+    }
+    setInterval(checkForPhoto, 500);
+    </script>
+</body>
+</html>
