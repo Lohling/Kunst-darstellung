@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>User A - Viewer</title>
+    <style>
+        body { 
+            background: #000; 
+            color: white; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+            overflow: hidden; 
+            font-family: sans-serif;
+        }
+        video, img { 
+            max-width: 100%; 
+            max-height: 100vh; 
+            display: none; 
+        }
+        img { 
+            object-fit: contain; 
+        }
+    </style>
+</head>
+<body>
+
+    <video id="videoPlayer" controls>
+        <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
+    </video>
+    
+    <img id="photoDisplay">
+
+    <button id="fullscreenBtn" style="position: absolute; top: 10px; right: 10px; padding: 10px;">Vollbild aktivieren</button>
+
+    <script>
+        const video = document.getElementById('videoPlayer');
+        const img = document.getElementById('photoDisplay');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        let photoReady = false; 
+
+        // Vollbild-Button
+        fullscreenBtn.onclick = () => {
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen();
+                fullscreenBtn.style.display = 'none'; // Button verstecken
+            }
+        }; 
+
+        // 1. ÜBERWACHUNG DER FERNBEDIENUNG
+        const remoteCheck = setInterval(() => {
+            if (localStorage.getItem('remote_start_video')) {
+                console.log("Remote-Start Signal empfangen!");
+                localStorage.removeItem('remote_start_video');
+                startExperience();
+            }
+        }, 100);
+
+        function startExperience() {
+            video.style.display = 'block';
+            video.style.width = '100vw';
+            video.style.height = '100vh';
+            video.muted = true; // Stumm schalten, um Autoplay zu erlauben
+            video.play();
+            
+            // Vollbild für Video entfernt, da es immer noch blockiert wird
+            // if (video.requestFullscreen) {
+            //     video.requestFullscreen().catch(e => console.log("Vollbild blockiert:", e));
+            // }
+        }
+
+        // 2. LOGIK WÄHREND DES VIDEOS
+        video.onplay = () => {
+            setTimeout(() => {
+                console.log("Sende Auslöse-Befehl an Kamera!");
+                localStorage.setItem('trigger_camera', Date.now()); 
+            }, 2000); 
+        };
+
+        // 3. FOTO IM HINTERGRUND LADEN
+        setInterval(() => {
+            const savedPhoto = localStorage.getItem('shared_photo');
+            if (savedPhoto && !photoReady) {
+                img.src = savedPhoto;
+                photoReady = true;
+                localStorage.removeItem('shared_photo');
+            }
+        }, 500);
+
+        // 4. VIDEO-ENDE & AUTO-RESET
+        video.onended = () => {
+            if (photoReady) {
+                video.style.display = 'none';
+                img.style.display = 'block';
+                img.style.width = '100vw';
+                img.style.height = '100vh';
+                
+                // 10 Sekunden Timer für den Reset
+                console.log("Bild wird für 10s angezeigt...");
+                setTimeout(() => {
+                    resetSystem();
+                }, 10000); // 10.000ms = 10 Sekunden
+            }
+        };
+
+        function resetSystem() {
+            console.log("Resetting...");
+            // Alles zurück auf Anfang
+            img.style.display = 'none';
+            video.style.display = 'none';
+            
+            // Video zurückspulen
+            video.pause();
+            video.currentTime = 0;
+            photoReady = false;
+            img.src = "";
+
+            // Vollbild beibehalten
+            // if (document.fullscreenElement) {
+            //     document.exitFullscreen();
+            // }
+        }
+    </script>
+</body>
+</html>
