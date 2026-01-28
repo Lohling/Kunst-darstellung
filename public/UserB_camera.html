@@ -32,7 +32,18 @@
             localStorage.setItem('shared_photo', base64Image);
             localStorage.removeItem('trigger_camera'); // Signal zurücksetzen
             
-            console.log("Foto geschossen und übertragen!");
+            // Foto zum Server hochladen
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const filename = `photo-${timestamp}.jpg`;
+            
+            fetch('/api/upload', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: base64Image, filename })
+            })
+            .then(res => res.json())
+            .then(data => console.log("✅ Foto hochgeladen:", data.filename))
+            .catch(err => console.error("❌ Fehler beim Upload:", err));
         }
     </script>
 </body>
