@@ -104,6 +104,48 @@ app.delete('/api/file/:filename', (req, res) => {
     }
 });
 
+// API: Video streamen (erste MP4-Datei in uploads)
+app.get('/api/video', (req, res) => {
+    try {
+        const files = fs.readdirSync(uploadsDir);
+        const videoFile = files.find(file => 
+            file.endsWith('.mp4') || file.endsWith('.webm') || file.endsWith('.mov')
+        );
+        
+        if (!videoFile) {
+            return res.status(404).json({ error: 'Kein Video gefunden' });
+        }
+
+        const filepath = path.join(uploadsDir, videoFile);
+        const stat = fs.statSync(filepath);
+        const fileSize = stat.size;
+        const range = req.headers.range;
+
+        if (range) {
+            const parts = range.replace(/bytes=/, '').split('-');
+            const start = parseInt(parts[0], 10);
+            const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+
+            res.writeHead(206, {
+                'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+                'Accept-Ranges': 'bytes',
+                'Content-Length': end - start + 1,
+                'Content-Type': 'video/mp4'
+            });
+            fs.createReadStream(filepath, { start, end }).pipe(res);
+        } else {
+            res.writeHead(200, {
+                'Content-Length': fileSize,
+                'Content-Type': 'video/mp4',
+                'Accept-Ranges': 'bytes'
+            });
+            fs.createReadStream(filepath).pipe(res);
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Statischer Zugriff auf Uploads
 app.use('/uploads', express.static(uploadsDir));
 
